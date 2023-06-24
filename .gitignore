@@ -1,0 +1,6 @@
+__pycache__
+*.bin
+*.rel
+*.rst
+*.lst
+*.ihx
