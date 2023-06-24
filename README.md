@@ -22,11 +22,19 @@ jump to the code written to xdata.
 - [make](https://www.gnu.org/software/make/)
 
 ### How to use
-```
+```sh
 # Check out repo with all sub-modules:
 git clone --recursive 'https://github.com/rosvall/cc2531_oem_flasher.git' 
+cd cc2531_oem_flasher
+
 # Build flasher stub and bootloader
 make
+
 # Flash bootloader to CC2531 dongle (that runs stock sniffer firmware)
 make flash
 ```
+
+Or use oem_flasher.py to run whatever else code you want on the dongle. The source of both `oem_flasher.py` and `stub.s` is written with readability and hack-ability in mind.
+
+It should be relatively simple to modify dfu_mode.s from the bootloader to run directly from ram, for example.
+
