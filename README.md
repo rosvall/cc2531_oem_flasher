@@ -19,7 +19,14 @@ jump to the code written to xdata.
 - [SDCC](https://sourceforge.net/projects/sdcc/) to assemble and link the flasher stub
 - [binutils](https://www.gnu.org/software/binutils/) to convert intel hex to raw binary
 - [pyusb](https://github.com/pyusb/pyusb) to run oem_flasher.py
+- [make](https://www.gnu.org/software/make/)
 
-### 
-
-
+### How to use
+```
+# Check out repo with all sub-modules:
+git clone --recursive 'https://github.com/rosvall/cc2531_oem_flasher.git' 
+# Build flasher stub and bootloader
+make
+# Flash bootloader to CC2531 dongle (that runs stock sniffer firmware)
+make flash
+```

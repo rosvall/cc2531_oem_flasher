@@ -13,7 +13,9 @@ BOOTLOADER = $(BOOTLOADER_DIR)/$(BOOTLOADER_BIN)
 
 GENERATED = $(STUB) $(REL) $(IHX) $(LST) $(RST) 
 
-hack: $(STUB) $(BOOTLOADER)
+all: $(STUB) $(BOOTLOADER)
+
+flash: $(STUB) $(BOOTLOADER)
 	python oem_flasher.py $(STUB) $(BOOTLOADER)
 
 $(BOOTLOADER):
@@ -31,4 +33,4 @@ clean:
 %.bin: %.ihx
 	objcopy --input-target=ihex --output-target=binary $< $@
 
-.PHONY: clean hack
+.PHONY: clean flash all
