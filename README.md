@@ -15,7 +15,7 @@ The control transfer payload is written to xdata 0x020F, and the (fat) write poi
 Additionally, the CC2531 has most special function registers mapped into xdata, and allows running code from xdata. This program exploits those features, by writing the given executable binary to xdata, setting the XMAP bit in the MEMCTR special function register, and finally overwriting a return pointer on stack to
 jump to the code written to xdata.
 
-## Requirements:
+## Build requirements:
 - [SDCC](https://sourceforge.net/projects/sdcc/) to assemble and link the flasher stub
 - [binutils](https://www.gnu.org/software/binutils/) to convert intel hex to raw binary
 - [pyusb](https://github.com/pyusb/pyusb) to run oem_flasher.py
