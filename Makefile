@@ -2,6 +2,7 @@ SRC = stub.s
 
 FLASHER = oem_flasher.py
 LICENSE = LICENSES/GPL-3.0-or-later.txt
+README = README.md
 
 STUB = stub.bin
 
@@ -22,7 +23,7 @@ all: $(STUB) $(BOOTLOADER)
 
 bindist: $(BINDIST)
 
-$(BINDIST): $(FLASHER) $(STUB) $(BOOTLOADER) $(LICENSE)
+$(BINDIST): $(FLASHER) $(STUB) $(BOOTLOADER) $(LICENSE) $(README)
 	tar -cvz -f $@ $^
 
 flash: $(STUB) $(BOOTLOADER)
