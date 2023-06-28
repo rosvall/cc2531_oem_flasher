@@ -46,3 +46,8 @@ Or use oem_flasher.py to run whatever else code you want on the dongle. The sour
 
 It should be relatively simple to modify dfu_mode.s from the bootloader to run directly from ram, for example.
 
+
+## See also
+ - [Simple USB DFU bootloader for TI CC2531](https://github.com/rosvall/cc2531_bootloader)
+ - [WPAN Adapter firmware for CC2531 USB Dongle](https://github.com/rosvall/cc2531_usb_wpan_adapter)
+ - [Linux kernel driver for CC2531 WPAN Adapter firmware](https://github.com/rosvall/cc2531_linux)
