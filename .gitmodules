@@ -1,4 +1,3 @@
 [submodule "bootloader"]
 	path = bootloader
 	url = git@github.com:rosvall/cc2531_bootloader.git
-	branch = main
