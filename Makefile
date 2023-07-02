@@ -34,6 +34,7 @@ $(BOOTLOADER):
 
 clean:
 	rm -f $(GENERATED)
+	make -C $(BOOTLOADER_DIR) clean
 
 %.rel: %.s
 	sdas8051 -pwlo $@ $<
