@@ -15,6 +15,30 @@ The control transfer payload is written to xdata 0x020F, and the (fat) write poi
 Additionally, the CC2531 has most special function registers mapped into xdata, and allows running code from xdata. This program exploits those features, by writing the given executable binary to xdata, setting the XMAP bit in the MEMCTR special function register, and finally overwriting a return pointer on stack to
 jump to the code written to xdata.
 
+## How to use
+Grab [the binary release](https://github.com/rosvall/cc2531_oem_flasher/releases) or follow the build instructions below.
+
+Then:
+
+```sh
+# Flash bootloader to CC2531 dongle (that runs stock sniffer firmware)
+python oem_flasher.py stub.bin bootloader/bootloader.bin
+```
+
+Or use oem_flasher.py to run whatever else code you want on the dongle. The source of both `oem_flasher.py` and `stub.s` is written with readability and hack-ability in mind.
+
+It should be relatively simple to modify dfu_mode.s from the bootloader to run directly from ram, for example.
+
+## Known issues
+### Works only for stock firmware with bcdDevice = 83.91 (0x8391)
+All the dongles I've bought came with the same stock sniffer firmware version, so I haven't been able test on anything else.
+
+If you get the error `Failed to find matching USB device`, then please check that your dongle firmware version with
+```sh
+lsusb -v -d 0x0451:0x16ae | grep bcdDevice
+```
+If it differs from 83.91 then please open an issue stating where to get that dongle, and if at all possible, attach a copy of the firmware.
+
 ## Build requirements:
 - [SDCC](https://sourceforge.net/projects/sdcc/) to assemble and link the flasher stub
 - [binutils](https://www.gnu.org/software/binutils/) to convert intel hex to raw binary
@@ -35,16 +59,6 @@ python oem_flasher.py stub.bin bootloader/bootloader.bin
 #or simply
 make flash
 ```
-
-## How to use
-```sh
-# Flash bootloader to CC2531 dongle (that runs stock sniffer firmware)
-python oem_flasher.py stub.bin bootloader/bootloader.bin
-```
-
-Or use oem_flasher.py to run whatever else code you want on the dongle. The source of both `oem_flasher.py` and `stub.s` is written with readability and hack-ability in mind.
-
-It should be relatively simple to modify dfu_mode.s from the bootloader to run directly from ram, for example.
 
 
 ## See also
