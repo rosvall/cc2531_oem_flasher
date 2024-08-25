@@ -25,6 +25,9 @@ SRAM_SIZE       = 8*1024
 DATA_SIZE       = 256
 
 ; Size of bootloader image to be flashed
+; For simplicity, we'll just flash the entire 2kB page, including whatever
+; garbage happens to immediately follow the bootloader image when copied from
+; ram. This shouldn't matter.
 IMG_LEN         = FLASH_PAGE_SIZE
 
 ; CC2531 special function registers
@@ -124,14 +127,14 @@ stub_start:
 	clr a.7
 
 	; DMA configuration
-	mov r0, a                      ; src h
-	; already in r1                ; src l
-	mov r2, #FWDATA >> 8           ; dst h
-	mov r3, #FWDATA                ; dst l
-	mov r4, #IMG_LEN >> 8          ; len h
-	mov r5, #IMG_LEN               ; len l
-	mov r6, #TRIG_FLASH            ; cfg h
-	mov r7, #SRC_INC_1 | PRIO_HIGH ; cfg l
+	mov r0, a              ; src h
+	; already in r1        ; src l
+	mov r2, #FWDATA >> 8   ; dst h
+	mov r3, #FWDATA        ; dst l
+	mov r4, #IMG_LEN >> 8  ; len h
+	mov r5, #IMG_LEN       ; len l
+	mov r6, #TRIG_FLASH    ; cfg h
+	mov r7, #SRC_INC_1     ; cfg l
 
 	; Load our DMA config and arm the channel
 	mov DMAARM, #CH0
