@@ -30,7 +30,7 @@ Or use oem_flasher.py to run whatever else code you want on the dongle. The sour
 It should be relatively simple to modify dfu_mode.s from the bootloader to run directly from ram, for example.
 
 ## Known issues
-### Works only for stock firmware with bcdDevice = 83.91 (0x8391) and 8.21 (0x0821)
+### Works only for stock firmware with bcdDevice = 83.91 (0x8391), 8.21 (0x0821) and 25.17 (0x2517)
 
 If you get an error message about your dongle not being supported, please open an issue stating where to get that dongle, and if at all possible, attach a copy of the firmware.
 

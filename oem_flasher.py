@@ -124,6 +124,16 @@ MEM_LAYOUTS = {
         data               = 0x3a2,
         stack_ret          = 0xc2,
     ),
+    0x2517: MemLayout(
+        transfer_buf_start = 0x202,
+        usb_state          = 0x377,
+        req_state          = 0x37e,
+        wptr               = 0x38b,
+        addrspace          = 0x38d,
+        wlen               = 0x38f,
+        data               = 0x3a2,
+        stack_ret          = 0xc2,
+    ),
 }
 
 
