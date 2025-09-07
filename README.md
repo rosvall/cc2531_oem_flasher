@@ -1,3 +1,8 @@
+> [!NOTE]
+> Moved to [codeberg.org/rosvall/cc2531_oem_flasher](https://codeberg.org/rosvall/cc2531_oem_flasher)
+>
+> For reasons given [here](https://github.com/rosvall/goodbye-github)
+
 # Flash a stock Texas Instruments CC2531USB-RD dongle, no tools required.
 
 ## What?
